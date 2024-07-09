@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>BodySync CNN</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="description" content="HTML5 website template" />
+    <meta name="keywords" content="global, template, html, sass, jquery" />
+    <meta name="author" content="Bucky Maler" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/main.css') }}"
+    />
+    <!-- <script src="{{ url_for('static', filename='js/functions.js') }}"></script> -->
+
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Open+Sans:400);
+
+      .frame {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 400px;
+        height: 400px;
+        margin-top: -200px;
+        margin-left: -200px;
+        border-radius: 2px;
+        box-shadow: 1px 2px 10px 0px rgba(0, 0, 0, 0.3);
+        background: #3a92af;
+        background: -webkit-linear-gradient(
+          bottom left,
+          #3a92af 0%,
+          #5ca05a 100%
+        );
+        background: -moz-linear-gradient(bottom left, #3a92af 0%, #5ca05a 100%);
+        background: -o-linear-gradient(bottom left, #3a92af 0%, #5ca05a 100%);
+        background: linear-gradient(to top right, #3a92af 0%, #5ca05a 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#3A92AF', endColorstr='#5CA05A',GradientType=1 );
+        color: #fff;
+        font-family: "Open Sans", Helvetica, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .center {
+        position: absolute;
+        width: 300px;
+        height: 260px;
+        top: 70px;
+        left: 50px;
+        background: #fff;
+        box-shadow: 8px 10px 15px 0 rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+      }
+
+      .title {
+        font-size: 16px;
+        color: #676767;
+        line-height: 50px;
+        height: 50px;
+        border-bottom: 1px solid #d8d8d8;
+        text-align: center;
+      }
+
+      .dropzone {
+        position: absolute;
+        z-index: 1;
+        box-sizing: border-box;
+        display: table;
+        table-layout: fixed;
+        width: 100px;
+        height: 80px;
+        top: 86px;
+        left: 100px;
+        border: 1px dashed #a4a4a4;
+        border-radius: 3px;
+        text-align: center;
+        overflow: hidden;
+
+        &.is-dragover {
+          border-color: #666;
+          background: #eee;
+        }
+
+        .content {
+          display: table-cell;
+          vertical-align: middle;
+        }
+
+        .upload {
+          margin: 6px 0 0 2px;
+        }
+
+        .filename {
+          display: block;
+          color: #676767;
+          font-size: 14px;
+          line-height: 18px;
+        }
+
+        .input {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          opacity: 0;
+        }
+      }
+
+      .upload-btn {
+        position: absolute;
+        width: 140px;
+        height: 40px;
+        left: 80px;
+        bottom: 24px;
+        background: #6ece3b;
+        border-radius: 3px;
+        text-align: center;
+        line-height: 40px;
+        font-size: 14px;
+        box-shadow: 0 2px 0 0 #498c25;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+
+        &:hover {
+          box-shadow: 0 2px 0 0 #498c25, 0 2px 10px 0 #6ece3b;
+        }
+      }
+
+      .bar {
+        position: absolute;
+        z-index: 1;
+        width: 300px;
+        height: 3px;
+        top: 49px;
+        left: 0;
+        background: #6ece3b;
+        transition: all 3s ease-out;
+        transform: scaleX(0);
+        transform-origin: 0 0;
+
+        &.active {
+          transform: scaleX(1) translate3d(0, 0, 0);
+        }
+      }
+
+      .syncing {
+        position: absolute;
+        top: 109px;
+        left: 134px;
+        opacity: 0;
+
+        &.active {
+          animation: syncing 3.2s ease-in-out;
+        }
+      }
+
+      .done {
+        position: absolute;
+        top: 112px;
+        left: 132px;
+        opacity: 0;
+
+        &.active {
+          animation: done 0.5s ease-in 3.2s;
+          animation-fill-mode: both;
+        }
+      }
+
+      @keyframes syncing {
+        0% {
+          transform: rotate(0deg);
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      @keyframes done {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      #background-video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      label.field {
+        border-radius: 2px;
+        color: #0f0f0f;
+        display: block;
+        margin: 16px;
+        max-width: 300px;
+        padding: 15px;
+        padding-bottom: 18px;
+        opacity: 0;
+        position: relative;
+        transition-property: opacity;
+        z-index: 1;
+      }
+      label.field span {
+        color: inherit;
+        display: block;
+        font-size: 16px;
+        height: 20px;
+        line-height: 20px;
+        left: 9px;
+        bottom: 18px;
+        pointer-events: none;
+        position: absolute;
+        top: 20px;
+        transform: scale(1) translateY(0);
+        transition-property: color, font-size, top;
+        z-index: 1;
+      }
+      label.field span.required::after {
+        color: inherit;
+        content: "*";
+        display: block;
+        height: 20px;
+        left: -20px;
+        line-height: 20px;
+        position: absolute;
+        text-align: center;
+        top: 0;
+        width: 20px;
+      }
+      .error label.field span {
+        color: #f02318;
+      }
+      label.field .psuedo_select {
+        background: rgba(255, 255, 255, 0);
+        position: relative;
+        border-color: #050404;
+        border-style: solid;
+        border-width: 0 0 2px 0;
+        color: #101010;
+        cursor: pointer;
+        font-size: 20px;
+        height: 24px;
+        line-height: 24px;
+        margin: 13px 0002px 0 0;
+        min-width: 250px;
+        padding-top: -18px;
+        outline: 0;
+        z-index: 1;
+      }
+      label.field .psuedo_select::after {
+        background: url("data:image/svg+xml;utf8,<svg fill='#666' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'> <path d='M7.41 7.84L12 12.42l4.59-4.58L18 9.25l-6 6-6-6z'/> <path d='M0-.75h24v24H0z' fill='none'/> </svg>"),
+          no-repeat;
+        content: "";
+        height: 24px;
+        width: 24px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        transition-property: background;
+      }
+      label.field .psuedo_select .selected {
+        height: 24px;
+        left: 1px;
+        line-height: 24px;
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        transform: translateY(24px);
+        transition-property: opacity, transform;
+        will-change: transform;
+      }
+      label.field .psuedo_select ul {
+        background: #fff;
+        box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.14);
+        display: block;
+        height: 0;
+        list-style: none;
+        margin-top: 2px;
+        opacity: 0;
+        overflow: hidden;
+        padding: 0 1px;
+        pointer-events: none;
+        transition-property: height, opacity;
+        width: 100%;
+        z-index: 2;
+      }
+      label.field .psuedo_select ul li {
+        height: 32px;
+        padding: 8px 4px;
+      }
+      label.field .deselect {
+        height: 100vh;
+        left: 0;
+        position: fixed;
+        top: 0;
+        width: 100vw;
+        z-index: -1;
+      }
+      label.field.focused {
+        color: #007bed;
+      }
+      label.field.focused .psuedo_select {
+        border-color: #007bed;
+      }
+      label.field.focused .psuedo_select::after {
+        background: url("data:image/svg+xml;utf8,<svg fill='#007BED' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'> <path d='M7.41 7.84L12 12.42l4.59-4.58L18 9.25l-6 6-6-6z'/> <path d='M0-.75h24v24H0z' fill='none'/> </svg>"),
+          no-repeat;
+      }
+      label.field.focused .psuedo_select ul {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      /* Style for the error message popup */
+
+      #error-message {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(255, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        display: none;
+      }
+    </style>
+    <script>
+      var util = {
+          f: {
+            addStyle: function (elem, prop, val, vendors) {
+              var i, ii, property, value;
+              if (!util.f.isElem(elem)) {
+                elem = document.getElementById(elem);
+              }
+              if (!util.f.isArray(prop)) {
+                prop = [prop];
+                val = [val];
+              }
+              for (i = 0; i < prop.length; i += 1) {
+                var thisProp = String(prop[i]),
+                  thisVal = String(val[i]);
+                if (typeof vendors !== "undefined") {
+                  if (!util.f.isArray(vendors)) {
+                    vendors.toLowerCase() == "all"
+                      ? (vendors = ["webkit", "moz", "ms", "o"])
+                      : (vendors = [vendors]);
+                  }
+                  for (ii = 0; ii < vendors.length; ii += 1) {
+                    elem.style[vendors[i] + thisProp] = thisVal;
+                  }
+                }
+                thisProp = thisProp.charAt(0).toLowerCase() + thisProp.slice(1);
+                elem.style[thisProp] = thisVal;
+              }
+            },
+            cssLoaded: function (event) {
+              var child = util.f.getTrg(event);
+              child.setAttribute("media", "all");
+            },
+            events: {
+              cancel: function (event) {
+                util.f.events.prevent(event);
+                util.f.events.stop(event);
+              },
+              prevent: function (event) {
+                event = event || window.event;
+                event.preventDefault();
+              },
+              stop: function (event) {
+                event = event || window.event;
+                event.stopPropagation();
+              },
+            },
+            getSize: function (elem, prop) {
+              return parseInt(elem.getBoundingClientRect()[prop], 10);
+            },
+            getTrg: function (event) {
+              event = event || window.event;
+              if (event.srcElement) {
+                return event.srcElement;
+              } else {
+                return event.target;
+              }
+            },
+            isElem: function (elem) {
+              return util.f.isNode(elem) && elem.nodeType == 1;
+            },
+            isArray: function (v) {
+              return v.constructor === Array;
+            },
+            isNode: function (elem) {
+              return typeof Node === "object"
+                ? elem instanceof Node
+                : elem &&
+                    typeof elem === "object" &&
+                    typeof elem.nodeType === "number" &&
+                    typeof elem.nodeName === "string" &&
+                    elem.nodeType !== 3;
+            },
+            isObj: function (v) {
+              return typeof v == "object";
+            },
+            replaceAt: function (str, index, char) {
+              return (
+                str.substr(0, index) + char + str.substr(index + char.length)
+              );
+            },
+          },
+        },
+        form = {
+          f: {
+            init: {
+              register: function () {
+                console.clear(); // just cuz codepen
+                var child,
+                  children = document.getElementsByClassName("field"),
+                  i;
+                for (i = 0; i < children.length; i += 1) {
+                  child = children[i];
+                  util.f.addStyle(child, "Opacity", 1);
+                }
+                children = document.getElementsByClassName("psuedo_select");
+                for (i = 0; i < children.length; i += 1) {
+                  child = children[i];
+                  child.addEventListener("click", form.f.select.toggle);
+                }
+              },
+              unregister: function () {
+                //just here as a formallity
+                //call this to stop all ongoing timeouts are ready the page for some sort of json re-route
+              },
+            },
+            select: {
+              blur: function (field) {
+                field.classList.remove("focused");
+                var child,
+                  children = field.childNodes,
+                  i,
+                  ii,
+                  nested_child,
+                  nested_children;
+                for (i = 0; i < children.length; i += 1) {
+                  child = children[i];
+                  if (util.f.isElem(child)) {
+                    if (child.classList.contains("deselect")) {
+                      child.parentNode.removeChild(child);
+                    } else if (child.tagName == "SPAN") {
+                      if (!field.dataset.value) {
+                        util.f.addStyle(
+                          child,
+                          ["FontSize", "Top"],
+                          ["16px", "32px"]
+                        );
+                      }
+                    } else if (child.classList.contains("psuedo_select")) {
+                      nested_children = child.childNodes;
+                      for (ii = 0; ii < nested_children.length; ii += 1) {
+                        nested_child = nested_children[ii];
+                        if (util.f.isElem(nested_child)) {
+                          if (nested_child.tagName == "SPAN") {
+                            if (!field.dataset.value) {
+                              util.f.addStyle(
+                                nested_child,
+                                ["Opacity", "Transform"],
+                                [0, "translateY(24px)"]
+                              );
+                            }
+                          } else if (nested_child.tagName == "UL") {
+                            util.f.addStyle(
+                              nested_child,
+                              ["Height", "Opacity"],
+                              [0, 0]
+                            );
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              focus: function (field) {
+                field.classList.add("focused");
+                var bool = false,
+                  child,
+                  children = field.childNodes,
+                  i,
+                  ii,
+                  iii,
+                  nested_child,
+                  nested_children,
+                  nested_nested_child,
+                  nested_nested_children,
+                  size = 0;
+                for (i = 0; i < children.length; i += 1) {
+                  child = children[i];
+                  util.f.isElem(child) && child.classList.contains("deselect")
+                    ? (bool = true)
+                    : null;
+                }
+                if (!bool) {
+                  child = document.createElement("div");
+                  child.className = "deselect";
+                  child.addEventListener("click", form.f.select.toggle);
+                  field.insertBefore(child, children[0]);
+                }
+                for (i = 0; i < children.length; i += 1) {
+                  child = children[i];
+                  if (
+                    util.f.isElem(child) &&
+                    child.classList.contains("psuedo_select")
+                  ) {
+                    nested_children = child.childNodes;
+                    for (ii = 0; ii < nested_children.length; ii += 1) {
+                      nested_child = nested_children[ii];
+                      if (
+                        util.f.isElem(nested_child) &&
+                        nested_child.tagName == "UL"
+                      ) {
+                        size = 0;
+                        nested_nested_children = nested_child.childNodes;
+                        for (
+                          iii = 0;
+                          iii < nested_nested_children.length;
+                          iii += 1
+                        ) {
+                          nested_nested_child = nested_nested_children[iii];
+                          if (
+                            util.f.isElem(nested_nested_child) &&
+                            nested_nested_child.tagName == "LI"
+                          ) {
+                            size += util.f.getSize(
+                              nested_nested_child,
+                              "height"
+                            );
+                            console.log("size: " + size);
+                          }
+                        }
+                        util.f.addStyle(
+                          nested_child,
+                          ["Height", "Opacity"],
+                          [size + "px", 1]
+                        );
+                      }
+                    }
+                  }
+                }
+              },
+              selection: function (child, parent) {
+                var children = parent.childNodes,
+                  i,
+                  ii,
+                  nested_child,
+                  nested_children,
+                  time = 0,
+                  value;
+                if (util.f.isElem(child) && util.f.isElem(parent)) {
+                  parent.dataset.value = child.dataset.value;
+                  value = child.innerHTML;
+                }
+                for (i = 0; i < children.length; i += 1) {
+                  child = children[i];
+                  if (util.f.isElem(child)) {
+                    if (child.classList.contains("psuedo_select")) {
+                      nested_children = child.childNodes;
+                      for (ii = 0; ii < nested_children.length; ii += 1) {
+                        nested_child = nested_children[ii];
+                        if (
+                          util.f.isElem(nested_child) &&
+                          nested_child.classList.contains("selected")
+                        ) {
+                          if (nested_child.innerHTML) {
+                            time = 1e2;
+                            util.f.addStyle(
+                              nested_child,
+                              ["Opacity", "Transform"],
+                              [0, "translateY(24px)"],
+                              "all"
+                            );
+                          }
+                          setTimeout(
+                            function (c, v) {
+                              c.innerHTML = v;
+                              util.f.addStyle(
+                                c,
+                                ["Opacity", "Transform", "TransitionDuration"],
+                                [1, "translateY(0px)", ".1s"],
+                                "all"
+                              );
+                            },
+                            time,
+                            nested_child,
+                            value
+                          );
+                        }
+                      }
+                    } else if (child.tagName == "SPAN") {
+                      util.f.addStyle(
+                        child,
+                        ["FontSize", "Top"],
+                        ["12px", "8px"]
+                      );
+                    }
+                  }
+                }
+              },
+              toggle: function (event) {
+                util.f.events.stop(event);
+                var child = util.f.getTrg(event),
+                  children,
+                  i,
+                  parent;
+                switch (true) {
+                  case child.classList.contains("psuedo_select"):
+                  case child.classList.contains("deselect"):
+                    parent = child.parentNode;
+                    break;
+                  case child.classList.contains("options"):
+                    parent = child.parentNode.parentNode;
+                    break;
+                  case child.classList.contains("option"):
+                    parent = child.parentNode.parentNode.parentNode;
+                    form.f.select.selection(child, parent);
+                    break;
+                }
+                parent.classList.contains("focused")
+                  ? form.f.select.blur(parent)
+                  : form.f.select.focus(parent);
+              },
+            },
+          },
+        };
+      window.onload = form.f.init.register;
+    </script>
+  </head>
+  <body>
+    <video autoplay muted loop id="background-video">
+      <source
+        src="{{ url_for('static', filename='img/vid2.mp4') }}"
+        type="video/mp4"
+      />
+    </video>
+
+    <!-- notification for small viewports and landscape oriented smartphones -->
+    <div class="device-notification">
+      <a class="device-notification--logo" href="#0">
+        <img
+          src="{{ url_for('static', filename='img/logo.png') }}"
+          alt="Global"
+        />
+
+        <p>BodySync</p>
+      </a>
+      <p class="device-notification--message">
+        Global has so much to offer that we must request you orient your device
+        to portrait or find a larger screen. You won't be disappointed.
+      </p>
+    </div>
+
+    <div class="perspective effect-rotate-left">
+      <div class="container">
+        <div class="outer-nav--return"></div>
+        <div id="viewport" class="l-viewport">
+          <div class="l-wrapper">
+            <header class="header">
+              <a class="header--logo" href="#0">
+                <img
+                  src="{{ url_for('static', filename='img/logo.png') }}"
+                  alt="Global"
+                />
+                <p>BodySync</p>
+              </a>
+
+              <div class="header--nav-toggle">
+                <span></span>
+              </div>
+            </header>
+            <nav class="l-side-nav">
+              <ul class="side-nav">
+                <li class="is-active"><span>Home</span></li>
+                <li><span>Work</span></li>
+                <li><span>Result</span></li>
+                <li><span>About Us</span></li>
+              </ul>
+            </nav>
+            <ul class="l-main-content main-content">
+              <li class="l-section section section--is-active">
+                <div class="intro">
+                  <div class="intro--banner">
+                    <h1>
+                      BodySync <br />CNN<br />Anatomy's<br />
+                      Tumor Prediction
+                    </h1>
+                    <button class="cta">
+                      Get Started
+                      <svg
+                        version="1.1"
+                        id="Layer_1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        x="0px"
+                        y="0px"
+                        viewBox="0 0 150 118"
+                        style="enable-background: new 0 0 150 118"
+                        xml:space="preserve"
+                      >
+                        <g
+                          transform="translate(0.000000,118.000000) scale(0.100000,-0.100000)"
+                        >
+                          <path
+                            d="M870,1167c-34-17-55-57-46-90c3-15,81-100,194-211l187-185l-565-1c-431,0-571-3-590-13c-55-28-64-94-18-137c21-20,33-20,597-20h575l-192-193C800,103,794,94,849,39c20-20,39-29,61-29c28,0,63,30,298,262c147,144,272,271,279,282c30,51,23,60-219,304C947,1180,926,1196,870,1167z"
+                          />
+                        </g>
+                      </svg>
+                      <span class="btn-background"></span>
+                    </button>
+                    <img
+                      src="{{ url_for('static', filename='img/body.png') }}"
+                      alt="Welcome"
+                    />
+                  </div>
+                </div>
+              </li>
+
+              <li class="l-section section">
+                <div class="frame">
+                  <!-- New code snippet added at the top of the frame -->
+                  <div>
+                    <label
+                      id="img_category_label"
+                      class="field"
+                      for="img_category"
+                      data-value=""
+                    >
+                      <span style="font-size: 22px; top: 8px">
+                        Select Category</span
+                      >
+                      <div
+                        style="margin-bottom: 18px"
+                        id="img_category"
+                        class="psuedo_select"
+                        name="img_category"
+                      >
+                        <span class="selected"></span>
+                        <ul id="img_category_options" class="options">
+                          <li class="option" data-value="opt_1">Brain Tumor</li>
+                          <!-- <li class="option" data-value="opt_2">Bone Tumor</li> -->
+                          <li class="option" data-value="opt_2">
+                            Kidney Tumor
+                          </li>
+                          <li class="option" data-value="opt_2">
+                            Breast Tumor
+                          </li>
+                          <li class="option" data-value="opt_1">Lung Tumor</li>
+                          <li class="option" data-value="opt_1">Oral Tumor</li>
+                        </ul>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div id="error-message">Please select a category.</div>
+
+                  <div class="center" id="upload-area">
+                    <div id="video-container">
+                      <video autoplay muted loop id="background-video">
+                        <source
+                          src="{{ url_for('static', filename='img/vid2.mp4') }}"
+                          type="video/mp4"
+                        />
+                      </video>
+                    </div>
+                    <div class="bar"></div>
+                    <div class="title">Drop file to upload</div>
+                    <div class="dropzone" id="dropzone">
+                      <!-- Updated the structure to wrap the input and the content -->
+                      <label for="fileInput" class="content">
+                        <img
+                          src="https://100dayscss.com/codepen/upload.svg"
+                          class="upload"
+                        />
+                        <span class="filename"></span>
+                        <input
+                          type="file"
+                          id="fileInput"
+                          class="input"
+                          style="display: none"
+                        />
+                      </label>
+                    </div>
+                    <img
+                      src="https://100dayscss.com/codepen/syncing.svg"
+                      class="syncing"
+                    />
+                    <img
+                      src="https://100dayscss.com/codepen/checkmark.svg"
+                      class="done"
+                    />
+                  </div>
+                </div>
+                <button
+                  id="analyze"
+                  style="margin-left: 40%; border: none"
+                  class="upload-btn"
+                >
+                  Analyze Tumor
+                </button>
+              </li>
+
+              <li id="result-section" class="l-section section">
+                <div class="contact">
+                  <div class="contact--lockup">
+                    <div
+                      style="text-align: center; margin: 0 auto; width: 50%"
+                      class="modal"
+                    >
+                      <div class="modal--information">
+                        <h1><strong>Result</strong></h1>
+                        <img id="uploaded-image" src="#" alt="Uploaded Image" />
+                        <h3 id="predicted-output">Predicted Output</h3>
+                        <p>
+                          Selected Category:
+                          <span id="selected-category"></span>
+                        </p>
+                        <p>Image Filename: <span id="image-filename"></span></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+
+              <li class="l-section section">
+                <div class="about">
+                  <div class="about--banner">
+                    <h2>We<br />Predict<br />Tumors</h2>
+                    <h4>
+                      We predict tumors from scaning images just upload your
+                      image to see the result.
+                    </h4>
+                    <h4>
+                      We uses advanced imaging technology to analyze tumor cells
+                    </h4>
+
+                    <img
+                      src="{{ url_for('static', filename='img/about-visual.png') }}"
+                      alt="About Us"
+                    />
+                  </div>
+                  <div class="about--options">
+                    <a href="#0">
+                      <h3>Brain Tumor</h3>
+                    </a>
+                    <a href="#0">
+                      <h3>Breast Tumor</h3>
+                    </a>
+                    <a href="#0">
+                      <h3>lung Tumor</h3>
+                    </a>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <ul class="outer-nav">
+        <li class="is-active">Home</li>
+        <li>Works</li>
+        <li>Result</li>
+        <li>About Us</li>
+      </ul>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        // Add the video element dynamically
+        $("#video-container").html(
+          '<video autoplay muted loop id="background-video"><source src="{{ url_for("static", filename="img/vid2.mp4") }}" type="video/mp4">Your browser does not support the video tag.</video>'
+        );
+      });
+    </script>
+
+    <script>
+      var droppedFiles = false;
+      var fileName = "";
+      var $dropzone = $(".dropzone");
+      var $button = $(".upload-btn");
+      var uploading = false;
+      var $syncing = $(".syncing");
+      var $done = $(".done");
+      var $bar = $(".bar");
+      var timeOut;
+
+      $dropzone
+        .on(
+          "drag dragstart dragend dragover dragenter dragleave drop",
+          function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        )
+        .on("dragover dragenter", function () {
+          $dropzone.addClass("is-dragover");
+        })
+        .on("dragleave dragend drop", function () {
+          $dropzone.removeClass("is-dragover");
+        })
+        .on("drop", function (e) {
+          droppedFiles = e.originalEvent.dataTransfer.files;
+          fileName = droppedFiles[0]["name"];
+          $(".filename").html(fileName);
+          $(".dropzone .upload").hide();
+        });
+
+      $button.bind("click", function () {
+        startUpload();
+      });
+
+      $("input:file").change(function () {
+        fileName = $(this)[0].files[0].name;
+        $(".filename").html(fileName);
+        $(".dropzone .upload").hide();
+      });
+
+      function startUpload() {
+        if (!uploading && fileName != "") {
+          uploading = true;
+          $button.html("Uploading...");
+          $dropzone.fadeOut();
+          $syncing.addClass("active");
+          $done.addClass("active");
+          $bar.addClass("active");
+          timeoutID = window.setTimeout(showDone, 3200);
+        }
+      }
+
+      function showDone() {
+        $button.html("Done");
+      }
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        // Add the video element dynamically
+        $("#video-container").html(
+          '<video autoplay muted loop id="background-video"><source src="{{ url_for("static", filename="img/vid2.mp4") }}" type="video/mp4">Your browser does not support the video tag.</video>'
+        );
+      });
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script>
+      window.jQuery ||
+        document.write(
+          "<script src='{{ url_for('static', filename='js/vendor/jquery-2.2.4.min.js') }}'><\/script>"
+        );
+    </script>
+
+    <script src="{{ url_for('static', filename='js/functions-min.js') }}"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Get the category select element
+        const categorySelect = document.getElementById("img_category");
+        // Get the file input element
+        const fileInput = document.getElementById("fileInput");
+        // Get the error message element
+        const errorMessage = document.getElementById("error-message");
+
+        // Add event listener to the category select
+        categorySelect.addEventListener("change", function () {
+          // Enable or disable the file input based on the selected category
+          if (categorySelect.value) {
+            fileInput.disabled = false;
+            errorMessage.style.display = "none"; // Hide error message if category selected
+          } else {
+            fileInput.disabled = true;
+            errorMessage.style.display = "block"; // Display error message if no category selected
+          }
+        });
+
+        // Add event listener to trigger file input when clicking on the upload area
+        const dropzone = document.getElementById("dropzone");
+        dropzone.addEventListener("click", function () {
+          // Check if a category is selected
+          if (!categorySelect.value) {
+            errorMessage.style.display = "block"; // Display error message if no category selected
+          } else {
+            fileInput.click();
+            errorMessage.style.display = "none"; // Hide error message if category selected
+          }
+        });
+      });
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- sending img to backend -->
+    <script>
+      document.getElementById("analyze").addEventListener("click", function () {
+        var selectedCategory = document
+          .querySelector("#img_category .selected")
+          .textContent.trim();
+        var fileInput = document.getElementById("fileInput");
+        var file = fileInput.files[0];
+    
+        if (!selectedCategory || !file) {
+          alert("Please select a category and an image.");
+          window.location.reload(); // Refresh the page
+          return;
+        }
+    
+        var formData = new FormData();
+        formData.append("selected_category", selectedCategory);
+        formData.append("image", file);
+    
+        fetch("/analyze", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => {
+            if (response.ok) {
+              return response.json();
+            }
+            throw new Error("Network response was not ok.");
+          })
+          .then((data) => {
+            console.log(data);
+            // Update the HTML elements with the received data
+            document.getElementById("uploaded-image").src =
+              URL.createObjectURL(file); // Set uploaded image
+            document.getElementById("predicted-output").textContent =
+              data.prediction; // Set predicted output
+            document.getElementById("selected-category").textContent =
+              data.selected_category; // Set selected category
+            document.getElementById("image-filename").textContent = file.name; // Set image filename
+    
+            
+    
+            // Scroll to the result section using jQuery
+            $("#result-section")[0].scrollIntoView({ behavior: "smooth" });
+          })
+          .catch((error) => {
+            console.error(
+              "There was a problem with your fetch operation:",
+              error
+            );
+          });
+      });
+    </script>
+    
+
+    <!--  -->
+  </body>
+</html>
